@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:fancy_popups_new/fancy_popups_new.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -48,27 +48,85 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result['success']) {
       UserModel user = result['data'];
 
-      // Lưu thông tin user vào local storage
-      await UserStorage.saveUser(user);
+      // Kiểm tra xem có cần xác thực 2FA không
+      if (user.requiresTwoFactor) {
+        // Kiểm tra xem user này đã từng xác thực 2FA thành công chưa
+        // bằng cách tìm token đã lưu với email này
+        bool hasValidToken = await UserStorage.hasValidTokenForEmail(
+            user.email ?? _emailController.text.trim());
 
-      // Hiển thị thông báo thành công
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => MyFancyPopup(
-          bodyStyle: const TextStyle(
-              fontFamily: "OpenSans",
-              letterSpacing: 1,
-              fontWeight: FontWeight.bold),
-          heading: "Đăng nhập thành công !",
-          body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
-          onClose: () {
-            loadingScreen(context, () => const TwoFactorScreen());
-          },
-          type: Type.success,
-          buttonColor: Colors.orangeAccent,
-          buttonText: "Tiếp tục",
-        ),
-      );
+        if (!hasValidToken) {
+          // Chưa có token hợp lệ cho email này → cần xác thực 2FA
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  TwoFactorScreen(email: _emailController.text.trim()),
+            ),
+          );
+        } else {
+          // Đã có token từ lần xác thực trước → sử dụng token đã lưu
+          String? savedToken = await UserStorage.getTokenForEmail(
+              user.email ?? _emailController.text.trim());
+
+          UserModel userWithSavedToken = UserModel(
+            token: savedToken,
+            refreshToken: user.refreshToken,
+            name: user.name,
+            address: user.address,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            role: user.role,
+            requiresTwoFactor: user.requiresTwoFactor,
+            message: user.message,
+            isSuccess: user.isSuccess,
+            errorMessage: user.errorMessage,
+          );
+
+          // Lưu thông tin user đã được cập nhật
+          await UserStorage.saveUser(userWithSavedToken);
+
+          // Đăng nhập thành công luôn
+          showDialog(
+            context: context,
+            builder: (BuildContext context) => MyFancyPopup(
+              bodyStyle: const TextStyle(
+                  fontFamily: "OpenSans",
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.bold),
+              heading: "Đăng nhập thành công !",
+              body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
+              onClose: () {
+                loadingScreen(context, () => const MainLayout());
+              },
+              type: Type.success,
+              buttonColor: Colors.orangeAccent,
+              buttonText: "Tiếp tục",
+            ),
+          );
+        }
+      } else {
+        // Không cần 2FA → đăng nhập thành công luôn
+        await UserStorage.saveUser(user);
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => MyFancyPopup(
+            bodyStyle: const TextStyle(
+                fontFamily: "OpenSans",
+                letterSpacing: 1,
+                fontWeight: FontWeight.bold),
+            heading: "Đăng nhập thành công !",
+            body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
+            onClose: () {
+              loadingScreen(context, () => const MainLayout());
+            },
+            type: Type.success,
+            buttonColor: Colors.orangeAccent,
+            buttonText: "Tiếp tục",
+          ),
+        );
+      }
     } else {
       // Hiển thị thông báo lỗi
       showDialog(

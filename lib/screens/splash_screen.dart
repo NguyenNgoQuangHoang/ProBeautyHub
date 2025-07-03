@@ -1,5 +1,4 @@
 import 'package:booking_app/screens/auth/login_screen.dart';
-import 'package:booking_app/screens/auth/register_screen.dart';
 import 'package:booking_app/models/splash_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';

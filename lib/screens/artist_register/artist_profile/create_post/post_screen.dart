@@ -43,12 +43,12 @@ class _PostScreenState extends State<PostScreen> {
         onPressed: () {
           loadingScreen(context, () => CreatePostScreen());
         },
-        child: Icon(Icons.add, color: Colors.black),
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: Colors.grey),
         ),
+        child: Icon(Icons.add, color: Colors.black),
       ),
     );
   }

@@ -5,10 +5,10 @@ class CustomSliverAppBar extends StatelessWidget {
   final Color backgroundColor;
 
   const CustomSliverAppBar({
-    Key? key,
+    super.key,
     this.onProfileTap,
     this.backgroundColor = Colors.white,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,3 @@
-import 'package:booking_app/home/tabs/search_screen/artist_detail_screen.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
 

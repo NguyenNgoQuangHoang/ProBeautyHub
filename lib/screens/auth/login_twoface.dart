@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:booking_app/home/main_layout.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
+import 'package:booking_app/services/api_service.dart';
+import 'package:booking_app/services/user_storage.dart';
+import 'package:booking_app/models/user_model.dart';
+import 'package:fancy_popups_new/fancy_popups_new.dart';
 
 class TwoFactorScreen extends StatefulWidget {
-  const TwoFactorScreen({super.key});
+  final String email;
+
+  const TwoFactorScreen({super.key, required this.email});
 
   @override
   State<TwoFactorScreen> createState() => _TwoFactorScreenState();
@@ -11,9 +17,15 @@ class TwoFactorScreen extends StatefulWidget {
 
 class _TwoFactorScreenState extends State<TwoFactorScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   bool _isFormValid = false;
+  bool _isLoading = false;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   void _validateForm() {
     setState(() {
@@ -21,18 +33,73 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _codeController.dispose();
-    super.dispose();
+  Future<void> _verifyCode() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final result = await _apiService.verifyTwoFactorCode(
+      email: widget.email,
+      twoFactorCode: _codeController.text.trim(),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result['success']) {
+      UserModel user = result['data'];
+
+      // Lưu thông tin user vào local storage (bây giờ có token)
+      await UserStorage.saveUser(user);
+
+      // Hiển thị thông báo thành công và chuyển vào app
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => MyFancyPopup(
+          bodyStyle: const TextStyle(
+              fontFamily: "OpenSans",
+              letterSpacing: 1,
+              fontWeight: FontWeight.bold),
+          heading: "Xác thực thành công !",
+          body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
+          onClose: () {
+            loadingScreen(context, () => const MainLayout());
+          },
+          type: Type.success,
+          buttonColor: Colors.orangeAccent,
+          buttonText: "Tiếp tục",
+        ),
+      );
+    } else {
+      // Hiển thị thông báo lỗi
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => MyFancyPopup(
+          bodyStyle: const TextStyle(
+              fontFamily: "OpenSans",
+              letterSpacing: 1,
+              fontWeight: FontWeight.bold),
+          heading: "Xác thực thất bại !",
+          body:
+              result['error'] ?? result['message'] ?? "Mã xác thực không đúng",
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+          type: Type.error,
+          buttonColor: Colors.red,
+          buttonText: "Thử lại",
+        ),
+      );
+    }
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      // Gọi loading screen và thực hiện xác thực 2FA (giả sử thành công)
-      loadingScreen(context, () => const MainLayout());
-    }
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -60,28 +127,28 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
               const Text('Email',
                   style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  hintText: 'Enter your email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.all(16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter email';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Invalid email format';
-                  }
-                  return null;
-                },
+                child: Text(
+                  widget.email,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Mã xác thực đã được gửi tới email của bạn. Vui lòng kiểm tra và nhập mã bên dưới.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(height: 16),
               const Text('Verification Code',
@@ -90,7 +157,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
               TextFormField(
                 controller: _codeController,
                 decoration: InputDecoration(
-                  hintText: 'Enter 2FA code',
+                  hintText: 'Enter 6-digit code',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -100,6 +167,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                   contentPadding: const EdgeInsets.all(16),
                 ),
                 keyboardType: TextInputType.number,
+                maxLength: 6,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the verification code';
@@ -112,7 +180,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: _isFormValid ? _submit : null,
+                onPressed: (_isFormValid && !_isLoading) ? _verifyCode : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       _isFormValid ? Colors.pink : Colors.grey[300],
@@ -121,14 +189,26 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'VERIFY',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  // TODO: Implement resend code functionality
+                },
                 child: const Text(
-                  'VERIFY',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'Gửi lại mã xác thực',
+                  style: TextStyle(color: Colors.blue),
                 ),
-              )
+              ),
             ],
           ),
         ),

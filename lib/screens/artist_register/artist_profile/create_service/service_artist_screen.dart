@@ -41,12 +41,12 @@ class _ServiceArtistScreenState extends State<ServiceArtistScreen> {
         onPressed: () {
           loadingScreen(context, () => CreateServiceScreen());
         },
-        child: Icon(Icons.add, color: Colors.black),
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: Colors.grey),
         ),
+        child: Icon(Icons.add, color: Colors.black),
       ),
     );
   }

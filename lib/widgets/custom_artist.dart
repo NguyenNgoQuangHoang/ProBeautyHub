@@ -9,12 +9,12 @@ class ArtistCard extends StatelessWidget {
   final String imagePath;
 
   const ArtistCard({
-    Key? key,
+    super.key,
     required this.name,
     required this.rating,
     required this.reviews,
     required this.imagePath,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

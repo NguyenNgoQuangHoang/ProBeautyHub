@@ -12,6 +12,8 @@ import 'create_post/create_post_screen.dart';
 import 'create_service/service_artist_screen.dart';
 
 class ArtistProfileScreen extends StatefulWidget {
+  const ArtistProfileScreen({super.key});
+
   @override
   State<ArtistProfileScreen> createState() => _ArtistProfileScreenState();
 }
@@ -261,7 +263,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           trailing: Icon(Icons.arrow_forward_ios, size: 16),
           onTap: onTap, // ⬅ cho phép click
         ),
-        Container(
+        SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
           child: Divider(
             color: Colors.grey,

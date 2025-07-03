@@ -5,6 +5,8 @@ import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
 
 class CreatePostScreen extends StatefulWidget {
+  const CreatePostScreen({super.key});
+
   @override
   _CreatePostScreenState createState() => _CreatePostScreenState();
 }

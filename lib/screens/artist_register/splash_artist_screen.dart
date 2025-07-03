@@ -1,7 +1,6 @@
 import 'package:booking_app/screens/artist_register/register_artist_screen.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
-import 'package:booking_app/screens/auth/register_screen.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 
 class SplashArtistScreen extends StatelessWidget {

@@ -43,15 +43,15 @@ class _RegisterArtistScreenState extends State<RegisterArtistScreen> {
     super.initState();
 
     // Listen for changes in required fields to check form validity
-    [
+    for (var controller in [
       _nameController,
       _phoneController,
       _addressController,
       _areaController,
       _usernameController
-    ].forEach((controller) {
+    ]) {
       controller.addListener(_validateForm);
-    });
+    }
   }
 
   @override

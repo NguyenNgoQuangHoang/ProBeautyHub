@@ -5,7 +5,7 @@ import '../models/review_model.dart';
 class ReviewItem extends StatelessWidget {
   final Review review;
 
-  const ReviewItem({Key? key, required this.review}) : super(key: key);
+  const ReviewItem({super.key, required this.review});
 
   @override
   Widget build(BuildContext context) {

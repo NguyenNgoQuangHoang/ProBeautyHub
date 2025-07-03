@@ -4,6 +4,8 @@ import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
 
 class CreateServiceScreen extends StatefulWidget {
+  const CreateServiceScreen({super.key});
+
   @override
   _CreateServiceScreenState createState() => _CreateServiceScreenState();
 }

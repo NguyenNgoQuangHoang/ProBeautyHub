@@ -6,7 +6,8 @@ class ArtistDashboardScreen extends StatelessWidget {
   final VoidCallback onViewAllPress;
   final Function(Map<String, dynamic>) onBookingPress;
 
-  ArtistDashboardScreen({
+  const ArtistDashboardScreen({
+    super.key,
     required this.bookingData,
     required this.onViewAllPress,
     required this.onBookingPress,

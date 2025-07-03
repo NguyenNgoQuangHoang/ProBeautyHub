@@ -110,6 +110,50 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> verifyTwoFactorCode({
+    required String email,
+    required String twoFactorCode,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/user-account/verify-twofactor-code',
+        data: {
+          'email': email,
+          'twoFactorCode': twoFactorCode,
+        },
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      // Parse response thành UserModel
+      UserModel user = UserModel.fromJson(response.data);
+
+      return {
+        'success': user.isSuccess,
+        'data': user,
+        'message': user.message ??
+            (user.isSuccess ? 'Xác thực thành công' : user.errorMessage),
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': _handleError(e),
+        'statusCode': e.response?.statusCode,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Đã xảy ra lỗi không xác định: $e',
+        'statusCode': null,
+      };
+    }
+  }
+
   String _handleError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionTimeout:

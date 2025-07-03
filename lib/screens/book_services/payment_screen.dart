@@ -7,7 +7,7 @@ import '../../widgets/custom_loading.dart';
 import '../profiles/profiles_screen.dart';
 
 class PaymentScreen extends StatelessWidget {
-  const PaymentScreen({Key? key}) : super(key: key);
+  const PaymentScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

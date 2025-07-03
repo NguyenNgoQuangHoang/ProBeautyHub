@@ -1,10 +1,6 @@
 import 'package:booking_app/screens/profiles/profiles_screen.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'dart:math';
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
 import '../widgets/colors.dart';

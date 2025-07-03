@@ -7,7 +7,7 @@ import '../../widgets/custom_text_field.dart';
 import 'package:fancy_popups_new/fancy_popups_new.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
@@ -180,10 +180,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return 'Please enter email';
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value))
+                        }
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
                           return 'Invalid email';
+                        }
                         return null;
                       },
                       onChanged: (_) => _validateForm(),

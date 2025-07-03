@@ -11,11 +11,11 @@ class InformationServiceScreen extends StatefulWidget {
   final num price;
 
   const InformationServiceScreen({
-    Key? key,
+    super.key,
     required this.title,
     required this.imageUrl,
     required this.price,
-  }) : super(key: key);
+  });
 
   @override
   State<InformationServiceScreen> createState() =>

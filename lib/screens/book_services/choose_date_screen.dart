@@ -9,7 +9,7 @@ import '../../widgets/custom_appbar.dart';
 import '../profiles/profiles_screen.dart';
 
 class ChooseDateScreen extends StatefulWidget {
-  const ChooseDateScreen({Key? key}) : super(key: key);
+  const ChooseDateScreen({super.key});
 
   @override
   State<ChooseDateScreen> createState() => _ChooseDateScreenState();
@@ -28,6 +28,7 @@ class _ChooseDateScreenState extends State<ChooseDateScreen> {
     "02:00 PM - 05:00 PM",
   ];
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],

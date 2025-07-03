@@ -8,7 +8,7 @@ import '../../widgets/custom_appbar.dart';
 import '../profiles/profiles_screen.dart';
 
 class ChooseServiceScreen extends StatefulWidget {
-  const ChooseServiceScreen({Key? key}) : super(key: key);
+  const ChooseServiceScreen({super.key});
 
   @override
   State<ChooseServiceScreen> createState() => _ChooseServiceScreenState();

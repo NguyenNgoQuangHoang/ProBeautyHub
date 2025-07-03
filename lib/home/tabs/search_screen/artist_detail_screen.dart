@@ -11,10 +11,10 @@ class ArtistDetailScreen extends StatefulWidget {
   final String imagePath;
 
   const ArtistDetailScreen({
-    Key? key,
+    super.key,
     required this.name,
     required this.imagePath,
-  }) : super(key: key);
+  });
 
   @override
   State<ArtistDetailScreen> createState() => _ArtistDetailScreenState();

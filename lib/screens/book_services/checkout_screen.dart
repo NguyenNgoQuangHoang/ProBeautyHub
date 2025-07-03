@@ -9,7 +9,7 @@ import '../../widgets/custom_appbar.dart';
 import '../profiles/profiles_screen.dart';
 
 class CheckOutScreen extends StatefulWidget {
-  const CheckOutScreen({Key? key}) : super(key: key);
+  const CheckOutScreen({super.key});
 
   @override
   State<CheckOutScreen> createState() => _CheckOutScreenState();
@@ -46,6 +46,7 @@ class _CheckOutScreenState extends State<CheckOutScreen> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[200],
