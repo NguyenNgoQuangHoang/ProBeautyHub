@@ -1,6 +1,6 @@
 import 'package:booking_app/home/main_layout.dart';
-import 'package:booking_app/screens/artist_register/register_succes_artist_screen.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
+import 'package:booking_app/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../widgets/custom_text_field.dart';
@@ -21,14 +21,79 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   bool _isFormValid = false;
+  bool _isLoading = false;
+  int _selectedGender = 1; // 1 for male, 0 for female
+  final ApiService _apiService = ApiService();
 
   void _validateForm() {
     final isValid = _formKey.currentState?.validate() ?? false;
     setState(() {
       _isFormValid = isValid;
     });
+  }
+
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final result = await _apiService.register(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      confirmPassword: _confirmPasswordController.text,
+      phoneNumber: _phoneController.text.trim(),
+      gender: _selectedGender,
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result['success']) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => MyFancyPopup(
+          bodyStyle: const TextStyle(
+              fontFamily: "OpenSans",
+              letterSpacing: 1,
+              fontWeight: FontWeight.bold),
+          heading: "Đăng ký thành công !",
+          body:
+              "Điều này có nghĩa là bạn đã tạo tài khoản thành công. Bây giờ bạn có thể đăng nhập và sử dụng dịch vụ của chúng tôi.",
+          onClose: () {
+            loadingScreen(context, () => const MainLayout());
+          },
+          type: Type.success,
+          buttonColor: Colors.orangeAccent,
+          buttonText: "Tiếp tục",
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => MyFancyPopup(
+          bodyStyle: const TextStyle(
+              fontFamily: "OpenSans",
+              letterSpacing: 1,
+              fontWeight: FontWeight.bold),
+          heading: "Đăng ký thất bại !",
+          body: result['error'] ?? "Đã xảy ra lỗi không xác định",
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+          type: Type.error,
+          buttonColor: Colors.red,
+          buttonText: "Thử lại",
+        ),
+      );
+    }
   }
 
   @override
@@ -38,6 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -123,6 +189,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onChanged: (_) => _validateForm(),
                     ),
                     CustomTextField(
+                      label: 'Phone Number',
+                      hintText: 'Phone number (optional)',
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      onChanged: (_) => _validateForm(),
+                    ),
+                    // Gender Selection
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        'Gender',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<int>(
+                              title: const Text('Male'),
+                              value: 1,
+                              groupValue: _selectedGender,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedGender = value!;
+                                });
+                                _validateForm();
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<int>(
+                              title: const Text('Female'),
+                              value: 0,
+                              groupValue: _selectedGender,
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedGender = value!;
+                                });
+                                _validateForm();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
                       label: 'Password',
                       hintText: 'Password',
                       controller: _passwordController,
@@ -146,33 +268,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isFormValid
-                            ? () {
-                                if (_formKey.currentState!.validate()) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) =>
-                                        MyFancyPopup(
-                                      bodyStyle: const TextStyle(
-                                          fontFamily: "OpenSans",
-                                          letterSpacing: 1,
-                                          fontWeight: FontWeight.bold),
-                                      heading: "Đăng ký thành công !",
-                                      body:
-                                          "Điều này có nghĩa là bạn đã tạo tài khoản thành công. Bây giờ bạn có thể đăng nhập và sử dụng dịch vụ của chúng tôi.",
-                                      onClose: () {
-                                        loadingScreen(
-                                            context, () => const MainLayout());
-                                      },
-                                      type: Type.success,
-                                      buttonColor: Colors.orangeAccent,
-                                      buttonText: "Tiếp tục",
-                                    ),
-                                  );
-                                }
-                              }
-                            : null,
-                        child: const Text("Đăng ký"),
+                        onPressed:
+                            (_isFormValid && !_isLoading) ? _register : null,
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : const Text("Đăng ký"),
                       ),
                     ),
                     const SizedBox(height: 15),

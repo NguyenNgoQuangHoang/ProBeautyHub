@@ -1,9 +1,11 @@
 import 'package:booking_app/home/main_layout.dart';
 import 'package:booking_app/screens/auth/register_screen.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
+import 'package:booking_app/services/api_service.dart';
+import 'package:booking_app/services/user_storage.dart';
+import 'package:booking_app/models/user_model.dart';
 import 'package:flutter/material.dart';
-
-import '../../home/tabs/home_screen.dart';
+import 'package:fancy_popups_new/fancy_popups_new.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -17,6 +19,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isFormValid = false;
+  bool _isLoading = false;
+  final ApiService _apiService = ApiService();
 
   void _validateForm() {
     setState(() {
@@ -24,11 +28,91 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final result = await _apiService.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (result['success']) {
+      UserModel user = result['data'];
+
+      // Lưu thông tin user vào local storage
+      await UserStorage.saveUser(user);
+
+      // Hiển thị thông báo thành công
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => MyFancyPopup(
+          bodyStyle: const TextStyle(
+              fontFamily: "OpenSans",
+              letterSpacing: 1,
+              fontWeight: FontWeight.bold),
+          heading: "Đăng nhập thành công !",
+          body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
+          onClose: () {
+            loadingScreen(context, () => const MainLayout());
+          },
+          type: Type.success,
+          buttonColor: Colors.orangeAccent,
+          buttonText: "Tiếp tục",
+        ),
+      );
+    } else {
+      // Hiển thị thông báo lỗi
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => MyFancyPopup(
+          bodyStyle: const TextStyle(
+              fontFamily: "OpenSans",
+              letterSpacing: 1,
+              fontWeight: FontWeight.bold),
+          heading: "Đăng nhập thất bại !",
+          body: result['error'] ??
+              result['message'] ??
+              "Đã xảy ra lỗi không xác định",
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+          type: Type.error,
+          buttonColor: Colors.red,
+          buttonText: "Thử lại",
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfAlreadyLoggedIn();
+  }
+
+  Future<void> _checkIfAlreadyLoggedIn() async {
+    bool isLoggedIn = await UserStorage.isLoggedIn();
+    if (isLoggedIn && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+      );
+    }
   }
 
   @override
@@ -129,14 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Login Button
               ElevatedButton(
-                // onPressed: () {},
-                onPressed: _isFormValid
-                    ? () {
-                        if (_formKey.currentState!.validate()) {
-                          loadingScreen(context, () => const MainLayout());
-                        }
-                      }
-                    : null,
+                onPressed: (_isFormValid && !_isLoading) ? _login : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       _isFormValid ? Colors.pink : Colors.grey[300],
@@ -145,14 +222,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'LOGIN',
-                  style: TextStyle(
-                    color:
-                        Colors.white, // đổi sang trắng cho dễ đọc trên nền hồng
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'LOGIN',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
 
               const SizedBox(height: 16),
