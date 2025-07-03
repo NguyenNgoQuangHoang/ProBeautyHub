@@ -1,5 +1,6 @@
 import 'package:booking_app/home/main_layout.dart';
 import 'package:booking_app/screens/auth/register_screen.dart';
+import 'package:booking_app/screens/auth/login_twoface.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:booking_app/services/api_service.dart';
 import 'package:booking_app/services/user_storage.dart';
@@ -61,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
           heading: "Đăng nhập thành công !",
           body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
           onClose: () {
-            loadingScreen(context, () => const MainLayout());
+            loadingScreen(context, () => const TwoFactorScreen());
           },
           type: Type.success,
           buttonColor: Colors.orangeAccent,
