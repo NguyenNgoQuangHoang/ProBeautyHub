@@ -3,6 +3,7 @@ import 'package:booking_app/screens/profiles/tabcontent/post_article_screen.dart
 import 'package:booking_app/screens/artist_register/artist_profile/artist_dashboard/artist_dashboard_screen.dart';
 import 'package:booking_app/screens/artist_register/artist_profile/create_post/post_screen.dart';
 import 'package:booking_app/screens/artist_register/artist_profile/create_promotion/promotion_screen.dart';
+import 'package:booking_app/screens/artist_register/artist_profile/create_schedule/create_schedule_screen.dart';
 import 'package:booking_app/screens/profiles/profiles_screen.dart';
 import 'package:booking_app/widgets/colors.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
@@ -12,8 +13,6 @@ import 'create_post/create_post_screen.dart';
 import 'create_service/service_artist_screen.dart';
 
 class ArtistProfileScreen extends StatefulWidget {
-  const ArtistProfileScreen({super.key});
-
   @override
   State<ArtistProfileScreen> createState() => _ArtistProfileScreenState();
 }
@@ -189,16 +188,21 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                         MaterialPageRoute(builder: (context) => PostScreen()),
                       );
                     }),
-                    buildMenuItem(Icons.star_border, "Đánh giá (100)"),
-                    buildMenuItem(Icons.image, "Khuyến mãi (100)", onTap: () {
+                    buildMenuItem(Icons.image, "Lịch", onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => UpdateDateScreen()),
+                      );
+                    }),
+                    buildMenuItem(Icons.image, "Khuyến mãi", onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => PromotionScreen()),
                       );
                     }),
-                    buildMenuItem(Icons.design_services, "Dịch vụ (100)",
-                        onTap: () {
+                    buildMenuItem(Icons.design_services, "Dịch vụ", onTap: () {
                       loadingScreen(context, () => ServiceArtistScreen());
                     }),
                     buildMenuItem(Icons.person_outline, "Tài khoản"),
@@ -263,7 +267,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           trailing: Icon(Icons.arrow_forward_ios, size: 16),
           onTap: onTap, // ⬅ cho phép click
         ),
-        SizedBox(
+        Container(
           width: MediaQuery.of(context).size.width * 0.8,
           child: Divider(
             color: Colors.grey,
