@@ -104,7 +104,7 @@ class _SettingScreenState extends State<SettingScreen> {
                               Icon(Icons.handshake_outlined, size: 15),
                               SizedBox(width: 8),
                               Text(
-                                'Đăng kí hợp tác',
+                                'Tài Khoản Artist',
                                 style: TextStyle(
                                     fontSize: 12,
                                     fontFamily: "JacquesFrancois"),
