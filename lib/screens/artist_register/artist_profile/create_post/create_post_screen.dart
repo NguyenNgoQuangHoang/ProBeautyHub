@@ -1,5 +1,4 @@
 import 'package:booking_app/screens/artist_register/artist_profile/create_post/list_post_screen.dart';
-import 'package:booking_app/screens/artist_register/artist_profile/create_service/list_service_screen.dart';
 import 'package:booking_app/widgets/colors.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:flutter/material.dart';

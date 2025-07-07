@@ -5,6 +5,8 @@ import 'package:booking_app/services/api_service.dart';
 import 'package:booking_app/services/user_storage.dart';
 import 'package:booking_app/models/user_model.dart';
 import 'package:fancy_popups_new/fancy_popups_new.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class TwoFactorScreen extends StatefulWidget {
   final String email;
@@ -49,11 +51,73 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
       _isLoading = false;
     });
 
-    if (result['success']) {
-      UserModel user = result['data'];
+    if (result['success'] == true || result['isSuccess'] == true) {
+      // Lấy token từ UserModel trong result['data']
+      UserModel? user = result['data'];
+      String? token = user?.token;
+      String? refreshToken = user?.refreshToken;
 
-      // Lưu thông tin user vào local storage (bây giờ có token)
-      await UserStorage.saveUser(user);
+      // Nếu không có trong UserModel, thử lấy trực tiếp từ response
+      if (token == null && result['token'] != null) {
+        token = result['token'];
+      }
+      if (refreshToken == null && result['refreshToken'] != null) {
+        refreshToken = result['refreshToken'];
+      }
+
+      print('Token found: ${token != null}');
+      print('Token length: ${token?.length ?? 0}');
+
+      if (token != null) {
+        // Decode token để lấy userId
+        try {
+          final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+          final String? userId = decodedToken['sub'];
+          print('Decoded userId: $userId');
+
+          if (userId != null) {
+            // Lưu userId riêng
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('user_id', userId);
+            print('UserId saved to SharedPreferences: $userId');
+          }
+        } catch (e) {
+          print('Error decoding token: $e');
+        }
+
+        // Lưu token riêng
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        print('Token saved to SharedPreferences: auth_token');
+
+        if (refreshToken != null) {
+          await prefs.setString('refresh_token', refreshToken);
+          print('Refresh token saved to SharedPreferences: refresh_token');
+        }
+
+        // Lưu token theo email
+        await UserStorage.saveTokenForEmail(widget.email, token);
+        print('Token saved to UserStorage for email: ${widget.email}');
+      } else {
+        print('Warning: No token found in response');
+      }
+
+      // Tạo UserModel từ dữ liệu response (cập nhật token nếu cần)
+      UserModel finalUser = UserModel(
+        token: token,
+        refreshToken: refreshToken,
+        email: widget.email,
+        isSuccess: true,
+        // Thêm các thông tin khác từ user có sẵn hoặc response
+        name: user?.name ?? result['name'],
+        address: user?.address ?? result['address'],
+        phoneNumber: user?.phoneNumber ?? result['phoneNumber'],
+        role: user?.role ?? result['role'],
+      );
+
+      // Lưu thông tin user
+      await UserStorage.saveUser(finalUser);
+      print('User saved to UserStorage');
 
       // Hiển thị thông báo thành công và chuyển vào app
       showDialog(
@@ -64,7 +128,7 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
               letterSpacing: 1,
               fontWeight: FontWeight.bold),
           heading: "Xác thực thành công !",
-          body: "Chào mừng ${user.name ?? user.email} quay trở lại!",
+          body: "Chào mừng quay trở lại!",
           onClose: () {
             loadingScreen(context, () => const MainLayout());
           },

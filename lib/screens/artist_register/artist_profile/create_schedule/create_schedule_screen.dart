@@ -6,7 +6,7 @@ import 'package:booking_app/widgets/colors.dart';
 import '../../../../widgets/custom_appbar.dart';
 
 class UpdateDateScreen extends StatefulWidget {
-  const UpdateDateScreen({Key? key}) : super(key: key);
+  const UpdateDateScreen({super.key});
 
   @override
   State<UpdateDateScreen> createState() => _UpdateDateScreenState();
