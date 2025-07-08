@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http_parser/http_parser.dart';
 import '../models/user_model.dart';
 
 class ApiService {
@@ -434,6 +436,152 @@ class ApiService {
       };
     } catch (e) {
       print('Error registering artist: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+        'data': null,
+      };
+    }
+  }
+
+  // Create service option
+  Future<Map<String, dynamic>> createServiceOption({
+    required String name,
+    required String description,
+    required double price,
+    required String serviceId,
+    XFile? imageFile,
+  }) async {
+    try {
+      final token = await _getStoredToken();
+      if (token == null) {
+        throw Exception('Vui lòng đăng nhập lại');
+      }
+
+      // Get artistId from token
+      final artistId = await getUserIdFromToken();
+      if (artistId == null) {
+        throw Exception('Không thể lấy thông tin nghệ sĩ');
+      }
+
+      FormData formData = FormData.fromMap({
+        'Name': name,
+        'Description': description,
+        'Price': price,
+        'ServiceId': serviceId,
+        'ArtistId': artistId,
+      });
+
+      // Add image if provided
+      if (imageFile != null) {
+        String fileName = imageFile.name;
+        if (kIsWeb) {
+          // For web
+          final bytes = await imageFile.readAsBytes();
+          formData.files.add(MapEntry(
+            'ImageFile',
+            MultipartFile.fromBytes(
+              bytes,
+              filename: fileName,
+              contentType: MediaType('image', 'png'),
+            ),
+          ));
+        } else {
+          // For mobile
+          formData.files.add(MapEntry(
+            'ImageFile',
+            await MultipartFile.fromFile(
+              imageFile.path,
+              filename: fileName,
+              contentType: MediaType('image', 'png'),
+            ),
+          ));
+        }
+      }
+
+      Response response = await _dio.post(
+        '/service-option/create-new-service-option',
+        data: formData,
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': 'Tạo dịch vụ thành công',
+          'data': response.data,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Tạo dịch vụ thất bại',
+        };
+      }
+    } catch (e) {
+      print('Error creating service option: $e');
+      if (e is DioException) {
+        return {
+          'success': false,
+          'message': _handleError(e),
+        };
+      } else {
+        return {
+          'success': false,
+          'message': e.toString(),
+        };
+      }
+    }
+  }
+
+  // Get service options for current artist
+  Future<Map<String, dynamic>> getServiceOptions() async {
+    try {
+      final token = await _getStoredToken();
+      if (token == null) {
+        return {
+          'success': false,
+          'error': 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.',
+          'data': null,
+        };
+      }
+
+      Response response = await _dio.post(
+        '/service-option/get-service-option',
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      return {
+        'success': true,
+        'data': response.data,
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        return {
+          'success': false,
+          'error': 'Token đã hết hạn. Vui lòng đăng nhập lại.',
+          'data': null,
+        };
+      }
+      return {
+        'success': false,
+        'error': _handleError(e),
+        'data': null,
+      };
+    } catch (e) {
+      print('Error getting service options: $e');
       return {
         'success': false,
         'error': e.toString(),

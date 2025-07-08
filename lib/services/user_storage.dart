@@ -1,5 +1,8 @@
 import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/user_model.dart';
 
 class UserStorage {
@@ -206,6 +209,215 @@ class UserStorage {
     } catch (e) {
       print('Error removing token for email: $e');
       return false;
+    }
+  }
+
+  /// Call /api/UserProgress/get-user API
+  static Future<Map<String, dynamic>> fetchUserProgress({
+    required String userId,
+    int? role,
+    int pageNumber = 1,
+    int pageSize = 10,
+    required String token,
+  }) async {
+    try {
+      Dio dio = Dio();
+      dio.options.baseUrl =
+          'https://flawless-a2exc2hwcge8bbfz.canadacentral-01.azurewebsites.net/api';
+      dio.options.connectTimeout = const Duration(seconds: 30);
+      dio.options.receiveTimeout = const Duration(seconds: 30);
+
+      FormData formData = FormData.fromMap({
+        'UserId': userId,
+        if (role != null) 'Role': role,
+        'PageNumber': pageNumber,
+        'PageSize': pageSize,
+      });
+
+      print('[fetchUserProgress] Request body: ${formData.fields}');
+
+      final response = await dio.post(
+        '/UserProgress/get-user',
+        data: formData,
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      return {
+        'success': true,
+        'data': response.data,
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': e.message,
+        'statusCode': e.response?.statusCode,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Unknown error: $e',
+        'statusCode': null,
+      };
+    }
+  }
+
+  /// Cập nhật profile người dùng
+  static Future<Map<String, dynamic>> updateUserProfile({
+    required String id,
+    required String name,
+    String? tagName,
+    String? phoneNumber,
+    int? gender,
+    String? address,
+    String? imagePath, // Đường dẫn file ảnh trên thiết bị
+    required String token,
+  }) async {
+    try {
+      Dio dio = Dio();
+      dio.options.baseUrl =
+          'https://flawless-a2exc2hwcge8bbfz.canadacentral-01.azurewebsites.net/api';
+      dio.options.connectTimeout = const Duration(seconds: 30);
+      dio.options.receiveTimeout = const Duration(seconds: 30);
+
+      FormData formData = FormData.fromMap({
+        'Id': id,
+        'Name': name,
+        if (tagName != null) 'TagName': tagName,
+        if (phoneNumber != null) 'PhoneNumber': phoneNumber,
+        if (gender != null) 'Gender': gender,
+        if (address != null) 'Address': address,
+        'ImageUrl': (imagePath != null && imagePath.isNotEmpty)
+            ? await MultipartFile.fromFile(imagePath,
+                filename: imagePath.split('/').last)
+            : '', // Luôn truyền ImageUrl, nếu không có thì truyền chuỗi rỗng
+      });
+
+      print('[updateUserProfile] Request body: ${formData.fields}');
+
+      final response = await dio.put(
+        '/api/user-account/update-profile',
+        data: formData,
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      print('[updateUserProfile] Response: ${response.data}');
+      return {
+        'success': true,
+        'data': response.data,
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': e.message,
+        'statusCode': e.response?.statusCode,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Unknown error: $e',
+        'statusCode': null,
+      };
+    }
+  }
+
+  /// Fetch all artists from /api/UserProgress/get-information-artist
+  static Future<Map<String, dynamic>> fetchAllArtists({
+    required String token,
+  }) async {
+    try {
+      Dio dio = Dio();
+      dio.options.baseUrl =
+          'https://flawless-a2exc2hwcge8bbfz.canadacentral-01.azurewebsites.net/api';
+      dio.options.connectTimeout = const Duration(seconds: 30);
+      dio.options.receiveTimeout = const Duration(seconds: 30);
+
+      final response = await dio.get(
+        '/UserProgress/get-information-artist',
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      return {
+        'success': true,
+        'data': response.data,
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': e.message,
+        'statusCode': e.response?.statusCode,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Unknown error: $e',
+        'statusCode': null,
+      };
+    }
+  }
+
+  /// Fetch artist advanced information by artistId
+  static Future<Map<String, dynamic>> fetchArtistAdvancedInformation({
+    required String artistId,
+    required String token,
+  }) async {
+    try {
+      Dio dio = Dio();
+      dio.options.baseUrl =
+          'https://flawless-a2exc2hwcge8bbfz.canadacentral-01.azurewebsites.net/api';
+      dio.options.connectTimeout = const Duration(seconds: 30);
+      dio.options.receiveTimeout = const Duration(seconds: 30);
+
+      FormData formData = FormData.fromMap({
+        'ArtistId': artistId,
+      });
+
+      final response = await dio.post(
+        '/artist-progress/get-artist-advanced-information',
+        data: formData,
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+      print(
+          '[fetchArtistAdvancedInformation] Response data: \\n${response.data}');
+      return {
+        'success': true,
+        'data': response.data,
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      return {
+        'success': false,
+        'error': e.message,
+        'statusCode': e.response?.statusCode,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Unknown error: $e',
+        'statusCode': null,
+      };
     }
   }
 }

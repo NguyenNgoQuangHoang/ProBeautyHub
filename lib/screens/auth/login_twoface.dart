@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:booking_app/home/main_layout.dart';
-import 'package:booking_app/widgets/custom_loading.dart';
+import 'package:booking_app/models/user_model.dart';
 import 'package:booking_app/services/api_service.dart';
 import 'package:booking_app/services/user_storage.dart';
-import 'package:booking_app/models/user_model.dart';
 import 'package:fancy_popups_new/fancy_popups_new.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TwoFactorScreen extends StatefulWidget {
   final String email;
@@ -51,41 +50,33 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
       _isLoading = false;
     });
 
+    String? userId;
+    String? role;
+
     if (result['success'] == true || result['isSuccess'] == true) {
-      // Lấy token từ UserModel trong result['data']
       UserModel? user = result['data'];
       String? token = user?.token;
       String? refreshToken = user?.refreshToken;
 
       // Nếu không có trong UserModel, thử lấy trực tiếp từ response
-      if (token == null && result['token'] != null) {
-        token = result['token'];
-      }
-      if (refreshToken == null && result['refreshToken'] != null) {
-        refreshToken = result['refreshToken'];
-      }
+      token ??= result['token'];
+      refreshToken ??= result['refreshToken'];
 
       print('Token found: ${token != null}');
       print('Token length: ${token?.length ?? 0}');
 
       if (token != null) {
-        // Decode token để lấy userId
         try {
           final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-          final String? userId = decodedToken['sub'];
+          userId = decodedToken['sub'];
+          role = decodedToken[
+              'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
           print('Decoded userId: $userId');
-
-          if (userId != null) {
-            // Lưu userId riêng
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('user_id', userId);
-            print('UserId saved to SharedPreferences: $userId');
-          }
+          print('Decoded role from token: $role');
         } catch (e) {
           print('Error decoding token: $e');
         }
 
-        // Lưu token riêng
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
         print('Token saved to SharedPreferences: auth_token');
@@ -95,50 +86,42 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
           print('Refresh token saved to SharedPreferences: refresh_token');
         }
 
-        // Lưu token theo email
+        if (userId != null) {
+          await prefs.setString('user_id', userId);
+          print('UserId saved to SharedPreferences: $userId');
+        }
+
         await UserStorage.saveTokenForEmail(widget.email, token);
         print('Token saved to UserStorage for email: ${widget.email}');
       } else {
         print('Warning: No token found in response');
       }
 
-      // Tạo UserModel từ dữ liệu response (cập nhật token nếu cần)
       UserModel finalUser = UserModel(
         token: token,
         refreshToken: refreshToken,
         email: widget.email,
         isSuccess: true,
-        // Thêm các thông tin khác từ user có sẵn hoặc response
+        id: userId,
         name: user?.name ?? result['name'],
         address: user?.address ?? result['address'],
         phoneNumber: user?.phoneNumber ?? result['phoneNumber'],
-        role: user?.role ?? result['role'],
+        role: role?.toLowerCase() == 'artist'
+            ? '1'
+            : role?.toLowerCase() == 'customer'
+                ? '2'
+                : null,
       );
 
-      // Lưu thông tin user
       await UserStorage.saveUser(finalUser);
       print('User saved to UserStorage');
 
-      // Hiển thị thông báo thành công và chuyển vào app
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => MyFancyPopup(
-          bodyStyle: const TextStyle(
-              fontFamily: "OpenSans",
-              letterSpacing: 1,
-              fontWeight: FontWeight.bold),
-          heading: "Xác thực thành công !",
-          body: "Chào mừng quay trở lại!",
-          onClose: () {
-            loadingScreen(context, () => const MainLayout());
-          },
-          type: Type.success,
-          buttonColor: Colors.orangeAccent,
-          buttonText: "Tiếp tục",
-        ),
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const MainLayout()),
+        (route) => false,
       );
     } else {
-      // Hiển thị thông báo lỗi
       showDialog(
         context: context,
         builder: (BuildContext context) => MyFancyPopup(

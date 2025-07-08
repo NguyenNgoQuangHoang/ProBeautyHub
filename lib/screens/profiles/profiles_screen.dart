@@ -72,7 +72,12 @@ class _ProfilesScreenState extends State<ProfilesScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                const SingleChildScrollView(child: PostArticleScreen()),
+                const SingleChildScrollView(
+                  child: PostArticleScreen(
+                    loadFromApi: true,
+                    isPreview: false,
+                  ),
+                ),
                 ServiceListScreen(),
                 ReviewScreen(),
               ],
