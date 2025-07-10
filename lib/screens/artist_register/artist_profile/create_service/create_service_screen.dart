@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:booking_app/widgets/colors.dart';
 import 'package:booking_app/services/api_service.dart';
 import 'package:flutter/material.dart';

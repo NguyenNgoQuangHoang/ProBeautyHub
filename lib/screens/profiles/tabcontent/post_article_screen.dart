@@ -149,7 +149,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Container(
+    return SizedBox(
       height: widget.isPreview ? 200 : 300,
       child: const Center(
         child: CircularProgressIndicator(),
@@ -158,7 +158,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> {
   }
 
   Widget _buildErrorState() {
-    return Container(
+    return SizedBox(
       height: widget.isPreview ? 200 : 300,
       child: Center(
         child: Column(
@@ -183,7 +183,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Container(
+    return SizedBox(
       height: widget.isPreview ? 200 : 300,
       child: const Center(
         child: Column(
@@ -306,10 +306,10 @@ class _PostArticleScreenState extends State<PostArticleScreen> {
                 backgroundImage: post['authorAvatarUrl'] != null
                     ? NetworkImage(post['authorAvatarUrl'])
                     : null,
+                backgroundColor: Colors.grey[300],
                 child: post['authorAvatarUrl'] == null
                     ? const Icon(Icons.person, color: Colors.white)
                     : null,
-                backgroundColor: Colors.grey[300],
               ),
               const SizedBox(width: 12),
               Expanded(

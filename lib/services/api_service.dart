@@ -292,24 +292,59 @@ class ApiService {
         };
       }
 
-      // Create form data
-      FormData formData = FormData.fromMap({
-        'Id': '',
-        'Name': '',
-        'CategoryId': '',
-      });
+      // Try GET request first
+      try {
+        Response response = await _dio.get(
+          '/service/get-service',
+          options: Options(
+            headers: {
+              'accept': '*/*',
+              'Authorization': 'Bearer $token',
+            },
+          ),
+        );
+
+        print('Get services response (GET): ${response.data}');
+        
+        return {
+          'success': true,
+          'data': response.data,
+          'statusCode': response.statusCode,
+        };
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 405) {
+          // Method not allowed, try POST
+          print('GET not allowed, trying POST...');
+        } else {
+          throw e; // Re-throw other errors
+        }
+      }
+
+      // If GET fails with 405, try POST with JSON
+      // Create request data
+      Map<String, dynamic> requestData = {
+        'command': 'get-service',
+        'Id': null,
+        'Name': null,
+        'CategoryId': null,
+      };
+
+      // Remove null values to avoid validation errors
+      requestData.removeWhere((key, value) => value == null);
 
       Response response = await _dio.post(
         '/service/get-service',
-        data: formData,
+        data: requestData,
         options: Options(
           headers: {
             'accept': '*/*',
             'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
           },
         ),
       );
+
+      print('Get services response (POST): ${response.data}');
 
       return {
         'success': true,
@@ -590,6 +625,56 @@ class ApiService {
     }
   }
 
+  // Delete service
+  Future<Map<String, dynamic>> deleteService(String serviceId) async {
+    try {
+      final token = await _getStoredToken();
+      if (token == null) {
+        return {
+          'success': false,
+          'error': 'Không tìm thấy token xác thực. Vui lòng đăng nhập lại.',
+          'data': null,
+        };
+      }
+
+      Response response = await _dio.delete(
+        '/service/delete-service/$serviceId',
+        options: Options(
+          headers: {
+            'accept': '*/*',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return {
+        'success': true,
+        'data': response.data,
+        'statusCode': response.statusCode,
+      };
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        return {
+          'success': false,
+          'error': 'Token đã hết hạn. Vui lòng đăng nhập lại.',
+          'data': null,
+        };
+      }
+      return {
+        'success': false,
+        'error': _handleError(e),
+        'data': null,
+      };
+    } catch (e) {
+      print('Error deleting service: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+        'data': null,
+      };
+    }
+  }
+
   // Helper method to get stored token
   Future<String?> _getStoredToken() async {
     try {
@@ -645,6 +730,8 @@ class ApiService {
         return 'Yêu cầu bị hủy';
       case DioExceptionType.connectionError:
         return 'Lỗi kết nối, vui lòng kiểm tra lại kết nối mạng';
+      case DioExceptionType.badCertificate:
+        return 'Lỗi chứng chỉ bảo mật';
       default:
         return 'Đã xảy ra lỗi không xác định: ${error.message}';
     }

@@ -26,7 +26,6 @@ class _InformationServiceScreenState extends State<InformationServiceScreen> {
   @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(
-      locale: 'vi_VN',
       symbol: 'VND',
     );
 

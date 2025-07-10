@@ -119,7 +119,7 @@ class _RegisterArtistScreenState extends State<RegisterArtistScreen> {
           });
           print('Cities loaded: ${_cities.length} cities');
         } else {
-          print('API response format error: ${data}');
+          print('API response format error: $data');
         }
       } else {
         print('Failed to load cities: ${result['error']}');
@@ -174,7 +174,7 @@ class _RegisterArtistScreenState extends State<RegisterArtistScreen> {
               _districts = List<Map<String, dynamic>>.from(data['districts']);
             });
           } else {
-            print('Unknown districts API format: ${data}');
+            print('Unknown districts API format: $data');
           }
         }
         print('Districts loaded: ${_districts.length} districts for $cityName');
@@ -223,7 +223,7 @@ class _RegisterArtistScreenState extends State<RegisterArtistScreen> {
               _services = List<Map<String, dynamic>>.from(data['services']);
             });
           } else {
-            print('Unknown services API format: ${data}');
+            print('Unknown services API format: $data');
             // Fallback: thử convert trực tiếp
             setState(() {
               _services = [

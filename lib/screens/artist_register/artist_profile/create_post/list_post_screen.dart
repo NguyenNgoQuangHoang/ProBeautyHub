@@ -285,7 +285,7 @@ class _ListPostScreenState extends State<ListPostScreen> {
 
         // Thumbnail image
         if (thumbnailUrl.isNotEmpty)
-          Container(
+          SizedBox(
             height: 300,
             width: double.infinity,
             child: Image.network(
@@ -308,7 +308,7 @@ class _ListPostScreenState extends State<ListPostScreen> {
               },
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
-                return Container(
+                return SizedBox(
                   height: 300,
                   child: Center(
                     child: CircularProgressIndicator(

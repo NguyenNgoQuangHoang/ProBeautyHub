@@ -18,7 +18,7 @@ class ServiceDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormatter =
-        NumberFormat.currency(locale: 'vi_VN', symbol: 'vnd');
+        NumberFormat.currency(symbol: 'vnd');
     return Scaffold(
       appBar: AppBar(
         title: Center(

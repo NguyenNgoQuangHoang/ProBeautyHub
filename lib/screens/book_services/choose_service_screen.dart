@@ -42,7 +42,6 @@ class _ChooseServiceScreenState extends State<ChooseServiceScreen> {
   @override
   Widget build(BuildContext context) {
     final currencyFormatter = NumberFormat.currency(
-      locale: 'vi_VN',
       symbol: 'VND',
     );
     return Scaffold(
