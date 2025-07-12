@@ -7,6 +7,10 @@ import 'package:booking_app/widgets/colors.dart';
 import 'package:booking_app/widgets/custom_loading.dart';
 import 'package:booking_app/services/appointment_api_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'dart:convert';
+import '../../../providers/auth_provider.dart';
 
 import 'create_service/service_artist_screen.dart';
 
@@ -29,11 +33,81 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
   
   bool _isLoadingAppointments = true;
   List<dynamic> _appointments = [];
+  String? _userId; // Lưu trữ userId của artist hiện tại
 
   @override
   void initState() {
     super.initState();
-    _loadAppointments();
+    _getUserIdAndLoadAppointments();
+  }
+
+  // Lấy userId từ các nguồn khả dụng
+  Future<void> _getUserIdAndLoadAppointments() async {
+    try {
+      // Thử lấy từ SharedPreferences trước
+      String? userId = await _getUserIdFromPrefs();
+      
+      // Nếu không có, thử lấy từ AuthProvider
+      if ((userId == null || userId.isEmpty) && mounted) {
+        try {
+          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+          if (authProvider.currentUser?.id != null && authProvider.currentUser!.id!.isNotEmpty) {
+            userId = authProvider.currentUser!.id;
+            print('Found user ID from AuthProvider: $userId');
+          }
+        } catch (providerError) {
+          print('Cannot access AuthProvider: $providerError');
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _userId = userId;
+        });
+      }
+      
+      print('Using artist ID for appointments: $_userId');
+      await _loadAppointments();
+    } catch (e) {
+      print('Error getting user ID: $e');
+      // Vẫn tải appointments để không bị lỗi UI
+      await _loadAppointments();
+    }
+  }
+
+  Future<String?> _getUserIdFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Thử lấy từ các khóa phổ biến
+      final userId = prefs.getString('user_id') ?? 
+                   prefs.getString('userId') ?? 
+                   prefs.getString('id') ??
+                   prefs.getString('user_data');
+      
+      if (userId != null && userId.isNotEmpty) {
+        if (userId.startsWith('{')) {
+          // Có thể là JSON string, thử parse ra
+          try {
+            final Map<String, dynamic> userData = jsonDecode(userId);
+            final extractedId = userData['id'];
+            if (extractedId != null) {
+              print('Found user ID from JSON: $extractedId');
+              return extractedId.toString();
+            }
+          } catch (e) {
+            print('Error parsing user data JSON: $e');
+          }
+        } else {
+          print('Found user ID: $userId');
+          return userId;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error getting user ID from prefs: $e');
+      return null;
+    }
   }
 
   Future<void> _loadAppointments() async {
@@ -42,7 +116,24 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
         _isLoadingAppointments = true;
       });
 
-      final result = await _appointmentApiService.getAppointments();
+      print('Loading appointments for artist: $_userId');
+      
+      // Chỉ gọi API nếu có userId (artistId)
+      if (_userId == null || _userId!.isEmpty) {
+        print('No artist ID available, skipping API call');
+        setState(() {
+          _appointments = []; // Xóa dữ liệu cũ
+          _isLoadingAppointments = false;
+          _processAppointmentCounts([]); // Reset counts
+        });
+        return;
+      }
+
+      // Gọi API với artistId (chính là userId của artist hiện tại)
+      print('Calling getAppointments API with artistId: $_userId');
+      final result = await _appointmentApiService.getAppointments(
+        artistId: _userId, // Truyền userId làm artistId
+      );
       
       if (result['success']) {
         final data = result['data'];
@@ -54,11 +145,14 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
             appointments = data['appointments'] ?? [];
           } else if (data.containsKey('data')) {
             appointments = data['data'] ?? [];
+          } else if (data.containsKey('items')) {
+            appointments = data['items'] ?? [];
           }
         } else if (data is List) {
           appointments = data;
         }
 
+        print('Loaded ${appointments.length} appointments for artist $_userId');
         _processAppointmentCounts(appointments);
         
         setState(() {
@@ -66,19 +160,26 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
           _isLoadingAppointments = false;
         });
       } else {
+        print('Failed to load appointments: ${result['error']}');
         setState(() {
+          _appointments = [];
+          _processAppointmentCounts([]);
           _isLoadingAppointments = false;
         });
       }
     } catch (e) {
+      print('Exception in _loadAppointments: $e');
       setState(() {
+        _appointments = [];
+        _processAppointmentCounts([]);
         _isLoadingAppointments = false;
       });
     }
   }
 
   Future<void> _refreshAppointments() async {
-    await _loadAppointments();
+    // Khi làm mới, cố gắng lấy lại userId để đảm bảo đúng artist hiện tại
+    await _getUserIdAndLoadAppointments();
   }
 
   void _processAppointmentCounts(List<dynamic> appointments) {
@@ -200,7 +301,7 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "LỊCH HẸN",
+                        "LỊCH HẸN CỦA TÔI",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontFamily: "JacquesFrancois",
@@ -241,10 +342,52 @@ class _ArtistProfileScreenState extends State<ArtistProfileScreen> {
                       ? Center(
                           child: Padding(
                             padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: Column(
+                              children: [
+                                CircularProgressIndicator(strokeWidth: 2),
+                                SizedBox(height: 8),
+                                Text(
+                                  _userId != null 
+                                      ? 'Đang tải lịch hẹn...'
+                                      : 'Đang lấy thông tin artist...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         )
-                      : SingleChildScrollView(
+                      : _appointments.isEmpty && _userId == null
+                          ? Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.error_outline, color: Colors.grey, size: 32),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Không thể tải lịch hẹn',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[700],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Vui lòng đăng nhập lại',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
                             children: [
